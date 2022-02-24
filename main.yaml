@@ -6,14 +6,14 @@
   vars:
 
     ansible_python_interpreter: '{{ ansible_playbook_python }}'
-    blog_image: httpbin
-    blog_image_tag: latest
-    blog_dns: local.chrisdlg.com
+    app_image: kennethreitz/httpbin
+    app_image_tag: latest
+    app_dns: $DOMAIN
     cloudflared_image: cloudflare/cloudflared
     cloudflared_tag: 2022.1.2
-    tunnel_name: local_blog
+    tunnel_name: local_dev
     replicas: 2
-    path_to_cloudflared: /Users/dlg/.cloudflared # A / is added to the end of this when setting the variable in the task.
+    path_to_cloudflared: /Users/$USER/.cloudflared # A / is added to the end of this when setting the variable in the task.
 
   pre_tasks:
 
@@ -28,8 +28,13 @@
     - debug: msg="{{ minikube_status.stderr }}"
 
     - name: Start minikube if it's not running.
-      command: minikube start --vm = true
+      command: minikube start
       when: "not minikube_status.stdout or 'Running' not in minikube_status.stdout"
+
+    - name: Turn on ingress addon for minikube.
+      command: minikube addons enable ingress
+      changed_when: false
+      ignore_errors: false
 
     - name: Check that cloudflared is installed.
       command: cloudflared --version
@@ -38,53 +43,53 @@
 
   tasks:
 
-    - name: Create a Deployment for Blog container.
+    - name: Create a Deployment for app container.
       k8s:
         state: present
         definition:
           apiVersion: apps/v1
           kind: Deployment
           metadata:
-            name: blog
+            name: app
             namespace: default
             labels:
-              app: blog
+              app: app
           spec:
             replicas: 1
             selector:
               matchLabels:
-                app: blog
+                app: app
             template:
               metadata:
                 labels:
-                  app: blog
+                  app: app
               spec:
                 containers:
-                - name: blog
-                  image: "{{ blog_image }}:{{ blog_image_tag }}"
+                - name: app
+                  image: "{{ app_image }}:{{ app_image_tag }}"
                   imagePullPolicy: IfNotPresent
                   ports:
-                  - containerPort: 8080
+                  - containerPort: 80
 
-    - name: Create a Service for Blog container.
+    - name: Create a Service for app container.
       k8s:
         state: present
         definition:
           apiVersion: v1
           kind: Service
           metadata:
-            name: blog
+            name: app
             namespace: default
           spec:
             type: LoadBalancer
             selector:
-              app: blog
+              app: app
             ports:
             - port: 80
-              targetPort: 8080
+              targetPort: 80
 
-    - name: Get ClusterIP for Blog container.
-      command: kubectl get svc blog -o jsonpath='{.spec.clusterIP}'
+    - name: Get ClusterIP for app container.
+      command: kubectl get svc app -o jsonpath='{.spec.clusterIP}'
       register: cluster_ip
       changed_when: false
       ignore_errors: false
@@ -130,7 +135,7 @@
               metrics: 0.0.0.0:2000
               no-autoupdate: true
               ingress:
-              - hostname: {{ blog_dns }}
+              - hostname: {{ app_dns }}
                 service: http://{{ cluster_ip.stdout }}
               - service: http_status:404
 
@@ -193,12 +198,9 @@
                        path: config.yaml
 
   post_tasks:
-    
-    - debug:
-        msg: "Container local URL: {{ minikube_service['stdout_lines'][0] }}"
 
-    - name: Create DNS record for tunnel at "{{ blog_dns }}"
-      command: cloudflared tunnel route dns --overwrite-dns {{ tunnel_UUID.stdout }} {{ blog_dns }}
+    - name: Create DNS record for tunnel at "{{ app_dns }}"
+      command: cloudflared tunnel route dns --overwrite-dns {{ tunnel_UUID.stdout }} {{ app_dns }}
       changed_when: false
       register: tunnel_DNS
 
