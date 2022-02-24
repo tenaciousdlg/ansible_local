@@ -1,5 +1,5 @@
 # ansible_local
-Uses an ansible-playbook to deploy a K8s cluster to minikube on OSX
+Uses an ansible-playbook to deploy a K8s cluster to minikube on OSX that you can remotley view via Cloudflare Tunnels
 
 ## Pre-requistes
 
