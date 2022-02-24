@@ -33,9 +33,9 @@ minikube status
 1. Set a DOMAIN variable for the endpoint. I have my tunnel tied to chrisdlg.com so my workflow looks like this
 
 ```
-❯ DOMAIN="local.chrisdlg.com"
-❯ echo $DOMAIN
-local.chrisdlg.com
+❯ export DOMAIN="local.chrisdlg"
+❯ env | grep -i domain
+DOMAIN=local.chrisdlg
 ```
 
 2. Clone this repository.
