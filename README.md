@@ -56,3 +56,13 @@ _Note that this is ran from the same directory (folder) that `main.yaml` is loca
 PLAY [minikube cloudflared local k8s] *****************************************************************************************************************************************************
 
 ```
+
+4. When you're done remove the cluster via minikube
+
+```
+❯ minikube delete
+🔥  Deleting "minikube" in docker ...
+🔥  Deleting container "minikube" ...
+🔥  Removing /Users/dlg/.minikube/machines/minikube ...
+💀  Removed all traces of the "minikube" cluster.
+```
