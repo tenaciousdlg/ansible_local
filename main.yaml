@@ -10,8 +10,7 @@
     app_image_tag: latest
     app_dns: "{{ lookup('env','DOMAIN') }}"
     cloudflared_image: cloudflare/cloudflared
-    cloudflared_tag: 2022.3.4
-    tunnel_name: local_dev
+    tunnel_name: workstation
     replicas: 2
     path_to_cloudflared: /Users/$USER/.cloudflared # A / is added to the end of this when setting the variable in the task.
 
@@ -160,7 +159,7 @@
                spec:
                  containers:
                  - name: cloudflared
-                   image: "{{ cloudflared_image }}:{{ cloudflared_tag }}"
+                   image: "{{ cloudflared_image }}:{{ app_image_tag }}"
                    args:
                    - tunnel
                    - --config
